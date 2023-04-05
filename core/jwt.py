@@ -3,10 +3,12 @@ from datetime import datetime, timedelta
 from functools import wraps
 
 import jwt
-from jwt import ExpiredSignatureError, PyJWTError
 from flask import request, g
+from jwt import ExpiredSignatureError, PyJWTError
+from sqlalchemy.orm import sessionmaker
 
 from core.errors import HTTPException
+from db.db_service import db_service
 from settings import SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES
 
 ALGORITHM = "HS256"
@@ -95,6 +97,19 @@ def auth_required(f):
         g.id_token = decoded_token
         g.access_token = token
         g.current_user = decoded_token
+        g.db_session = sessionmaker(bind=db_service.engine)()
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
+def superuser_required(f):
+    @wraps(f)
+    @auth_required
+    def decorated_function(*args, **kwargs):
+        current_user = g.current_user
+        if not current_user["is_superuser"]:
+            raise HTTPException(400, "Only a superuser can execute this action")
         return f(*args, **kwargs)
 
     return decorated_function

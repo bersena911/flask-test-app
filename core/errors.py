@@ -13,10 +13,12 @@ def http_exception_handler(e):
 
 
 def general_exception_handler(e):
-    response = jsonify(message="Something Went Wrong")
-    response.status_code = 500
     print(e)
-    return response
+    return jsonify(message="Something Went Wrong"), 500
+
+
+def bad_request_handler(e):
+    return jsonify(message=e.description), 400
 
 
 # from ..main import app

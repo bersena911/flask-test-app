@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, g
 
 from core.errors import HTTPException
 from core.jwt import create_access_token
@@ -13,7 +13,7 @@ token_router = Blueprint("tokens", __name__)
 @token_router.route(f"{API_V1_STR}/login/", methods=["POST"])
 def login_access_token():
     data = request.json
-    user = get_user_by_username(data["username"])
+    user = get_user_by_username(g.db_session, data["username"])
 
     if not user or not verify_password(
         data["password"], get_user_hashed_password(user)

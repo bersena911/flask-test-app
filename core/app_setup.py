@@ -1,5 +1,5 @@
-from db.db_service import db_service
+from flask import g
 
 
-def sql_alchemy_teardown(app):
-    db_service.dispose_engine()
+def db_session_close():
+    g.db_session.close()
