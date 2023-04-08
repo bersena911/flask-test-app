@@ -2,6 +2,7 @@ from flask import Blueprint, g, request, jsonify
 
 from core.errors import HTTPException
 from core.jwt import auth_required, superuser_required
+from core.validation import validate_post_data
 from db.utils import (
     check_if_user_is_superuser,
     get_users,
@@ -41,7 +42,7 @@ def users_post():
     user = get_user_by_username(g.db_session, email)
 
     if user:
-        return HTTPException(
+        raise HTTPException(
             400, f"The user with this email already exists in the system: {email}"
         )
     user = create_user(g.db_session, email, password, first_name, last_name)
@@ -60,23 +61,24 @@ def users_id_get(user_id):
     user = get_user_by_id(g.db_session, user_id)
 
     if not user:
-        return HTTPException(400, f"The user with id: {user_id} does not exists")
+        raise HTTPException(400, f"The user with id: {user_id} does not exists")
 
     return UserDetails(**user.__dict__).dict()
 
 
 @users_router.route(f"{API_V1_STR}/users/<user_id>/roles/", methods=["POST"])
 @superuser_required
-def users_assign_role_post(user_id):
+@validate_post_data
+def users_assign_role_post(user_id, data=dict):
     data = request.json
     role_id = data["role_id"]
     user = get_user_by_id(g.db_session, user_id)
     if not user:
-        return HTTPException(400, f"The user with id: {user_id} does not exists")
+        raise HTTPException(400, f"The user with id: {user_id} does not exists")
 
     role = get_role_by_id(g.db_session, role_id)
     if not role:
-        return HTTPException(400, f"The role does not exist")
+        raise HTTPException(400, f"The role does not exist")
 
     updated_user = assign_role_to_user(g.db_session, role, user)
-    return jsonify(message=f"User {user_id} assigned a role {role_id}")
+    return jsonify(message=f"User {user_id} assigned a role {role_id}"), 200
