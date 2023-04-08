@@ -46,8 +46,8 @@ def get_user_hashed_password(user):
     return user.password
 
 
-def get_users(session):
-    return session.query(User).all()
+def get_users(session, limit, offset):
+    return session.query(User).limit(limit).offset(offset).all()
 
 
 def create_user(

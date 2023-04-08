@@ -2,6 +2,7 @@ from flask import Blueprint, g, jsonify
 
 from core.errors import HTTPException
 from core.jwt import auth_required, superuser_required
+from core.pagination import paginate
 from core.validation import validate_post_data
 from db.utils import (
     check_if_user_is_superuser,
@@ -20,11 +21,15 @@ users_router = Blueprint("users", __name__)
 
 @users_router.route(f"{API_V1_STR}/users/", methods=["GET"])
 @auth_required
-def users_get():
+@paginate
+def users_get(limit: int, offset: int):
     current_user = g.current_user
 
     if check_if_user_is_superuser(current_user):
-        return [UserDetails(**user.__dict__).dict() for user in get_users(g.db_session)]
+        return [
+            UserDetails(**user.__dict__).dict()
+            for user in get_users(g.db_session, limit, offset)
+        ]
     else:
         return [current_user]
 
