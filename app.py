@@ -1,4 +1,5 @@
 from flask import Flask
+from pydantic import ValidationError
 
 from api.api_v1.endpoints.role import roles_router
 from api.api_v1.endpoints.token import token_router
@@ -9,6 +10,7 @@ from core.errors import (
     HTTPException,
     http_exception_handler,
     bad_request_handler,
+    validation_error_handler,
 )
 from db.init_db import init_db
 
@@ -23,6 +25,7 @@ for router in (users_router, token_router, roles_router):
 for error in (
     (HTTPException, http_exception_handler),
     (400, bad_request_handler),
+    (ValidationError, validation_error_handler)
     # (Exception, general_exception_handler),
 ):
     app.register_error_handler(error[0], error[1])

@@ -1,3 +1,5 @@
+import json
+
 from flask import jsonify
 
 
@@ -19,3 +21,7 @@ def general_exception_handler(e):
 
 def bad_request_handler(e):
     return jsonify(message=e.description), 400
+
+
+def validation_error_handler(e):
+    return jsonify(message=json.loads(e.json())), 400

@@ -1,4 +1,4 @@
-from flask import Blueprint, g, request, jsonify
+from flask import Blueprint, g, jsonify
 
 from core.errors import HTTPException
 from core.jwt import auth_required, superuser_required
@@ -12,7 +12,7 @@ from db.utils import (
     get_role_by_id,
     assign_role_to_user,
 )
-from schemas.user import UserDetails
+from schemas.user import UserDetails, RoleAssignSchema, CreateUserData
 from settings import API_V1_STR
 
 users_router = Blueprint("users", __name__)
@@ -31,13 +31,13 @@ def users_get():
 
 @users_router.route(f"{API_V1_STR}/users/", methods=["POST"])
 @superuser_required
-def users_post():
-    data = request.json
+@validate_post_data
+def route_create_user(data: CreateUserData):
     email, password, first_name, last_name = (
-        data["email"],
-        data["password"],
-        data["first_name"],
-        data["last_name"],
+        data.email,
+        data.password,
+        data.first_name,
+        data.password,
     )
     user = get_user_by_username(g.db_session, email)
 
@@ -46,7 +46,7 @@ def users_post():
             400, f"The user with this email already exists in the system: {email}"
         )
     user = create_user(g.db_session, email, password, first_name, last_name)
-    return UserDetails(**user.__dict__).dict()
+    return jsonify(message=f"User {user.id} created")
 
 
 @users_router.route(f"{API_V1_STR}/users/me", methods=["GET"])
@@ -69,9 +69,8 @@ def users_id_get(user_id):
 @users_router.route(f"{API_V1_STR}/users/<user_id>/roles/", methods=["POST"])
 @superuser_required
 @validate_post_data
-def users_assign_role_post(user_id, data=dict):
-    data = request.json
-    role_id = data["role_id"]
+def users_assign_role_post(user_id, data: RoleAssignSchema):
+    role_id = data.role_id
     user = get_user_by_id(g.db_session, user_id)
     if not user:
         raise HTTPException(400, f"The user with id: {user_id} does not exists")
